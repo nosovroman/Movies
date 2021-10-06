@@ -1,4 +1,4 @@
-package com.example.arcticfoxcompose.ui.theme
+package com.example.arcticfoxcompose.dataClasses
 
 import com.example.arcticfoxcompose.Message
 
