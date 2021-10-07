@@ -1,6 +1,9 @@
 package com.example.arcticfoxcompose
 
+//import khttp.get
+
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateColorAsState
@@ -9,7 +12,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +30,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.arcticfoxcompose.ui.theme.*
+import okhttp3.*
+import java.io.IOException
+
 
 object SampleData {
     var conversationSample = mutableListOf(
@@ -43,10 +48,12 @@ object SampleData {
 }
 
 class MainActivity : ComponentActivity() {
+
     //private val viewModel: MovieListViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            //khttp.get("http://httpbin.org/get")
             ArcticFoxComposeTheme {
                 MainScreen()
             }
@@ -71,6 +78,22 @@ fun MainScreen() {
         //val x = textState.value.text
         MovieListView(messages = getMoviesByRequest(textState.value), state = textState)
     }
+
+    run("https://api.github.com/users/Evin1-/repos")
+}
+
+fun run(url: String) {
+    val client = OkHttpClient()
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {}
+        override fun onResponse(call: Call, response: Response) {
+            Log.d("ФункцияRun", "SHAZAM123 ${response.body()?.string()}")
+        } //println(response.body()?.string())
+    })
 }
 
 @Composable
