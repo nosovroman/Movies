@@ -1,7 +1,6 @@
 package com.example.arcticfoxcompose
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateColorAsState
@@ -15,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -25,7 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.arcticfoxcompose.ui.theme.*
@@ -58,7 +57,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     //val movies = viewModel.movies.value
-    var textState = remember { mutableStateOf(TextFieldValue("")) }
+    var textState = remember { mutableStateOf("") }
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         //val movies = viewModel.movies.value
 //        for (movie in movies) {
@@ -69,18 +68,19 @@ fun MainScreen() {
         SearchFieldView(state = textState)
         Spacer(modifier = Modifier.height(10.dp))
         //MovieListView(messages = viewModel.movies.value)
-        MovieListView(messages = SampleData.conversationSample, state = textState)
+        //val x = textState.value.text
+        MovieListView(messages = getMoviesByRequest(textState.value), state = textState)
     }
 }
 
 @Composable
-fun MovieListView(messages: MutableList<Message>, state: MutableState<TextFieldValue>) {
+fun MovieListView(messages: MutableList<Message>, state: MutableState<String>) {
     var searchedText = state.value
 
     LazyColumn {
-        searchedText = state.value
+        //searchedText = state.value
         itemsIndexed(messages) { index, message ->
-            if (searchedText.toString() == "") { MessageCardView(message) }
+            if (searchedText == "") { MessageCardView(message) }
             else { MessageCardView(message) }
             if (index < messages.size - 1) Divider( color = SearchLineColorStart, thickness = 1.dp )
         }
@@ -88,8 +88,12 @@ fun MovieListView(messages: MutableList<Message>, state: MutableState<TextFieldV
 }
 
 @Composable
-fun SearchFieldView(state: MutableState<TextFieldValue>) {
+fun SearchFieldView(state: MutableState<String>) {
     var searchLineState = remember { mutableStateOf("") }
+
+    fun updateListMovies (value: String) {
+        state.value = value
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -116,18 +120,23 @@ fun SearchFieldView(state: MutableState<TextFieldValue>) {
                     shape = RoundedCornerShape(10.dp)
                 )
             ,
+            keyboardActions = KeyboardActions(onDone = {
+                updateListMovies(searchLineState.value)
+            }),
             value = searchLineState.value,
             onValueChange = {
                 searchLineState.value = it
+                if (searchLineState.value == "") updateListMovies(searchLineState.value)//state.value = searchLineState.value
             },
             singleLine = true,
             textStyle = TextStyle(color = SearchLineTxtColor, fontSize = 20.sp),
             placeholder = { Text(text = "Введите название фильма", color = HintColor) },
             trailingIcon = {
                 IconButton(onClick = {
-                    state.value = if (state.value == TextFieldValue("")) {TextFieldValue("1")} else {TextFieldValue("")}
+                    updateListMovies(searchLineState.value)
+                    //state.value = searchLineState.value
 
-                    getMoviesByRequest(searchLineState.toString());
+                    //getMoviesByRequest(searchLineState.toString());
                 }) {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -190,17 +199,41 @@ fun MessageCardView(msg: Message) {
 
 data class Message(val author: String, val body: String)
 
-fun getMoviesByRequest (requestMovie: String?) {
-    SampleData.conversationSample.add(
-        Message(
-            "Тор: Любовь и Гром",
-            "Супер-фильм, который стоит всем посмотреть!"
-        )
-    )
+fun getMoviesByRequest (requestMovie: String): MutableList<Message> {
+//    SampleData.conversationSample.add(
+//        Message(
+//            "Тор: Любовь и Гром",
+//            "Супер-фильм, который стоит всем посмотреть!"
+//        )
+//    )
 
-    for (movie in SampleData.conversationSample) {
-        Log.d("ФункцияПолучения", "SHAZAM2 ${movie.body}")
+    // фильтрация
+    var result = mutableListOf<Message>()
+    //Log.d("ФункцияПолучения", "SHAZAM! requestMovie is /${requestMovie}/")
+    if (requestMovie != "") {
+        for (temp in SampleData.conversationSample) {
+            //Log.d("ФункцияПолучения", "SHAZAM0 ${temp.body}, by $requestMovie")
+            if (temp.body.contains(requestMovie, ignoreCase = true)) {
+                result.add(temp)
+            }
+        }
+
+//        //  робит со списками, необходимо преобразование
+//        var temp = SampleData.conversationSample.filter { curMovie ->
+//            curMovie.author.contains(requestMovie)
+//        }
+//        temp.toMutableList()
     }
+    else {
+        result = SampleData.conversationSample
+        //Log.d("ФункцияПолучения", "SHAZAM1")
+    }
+
+//    for (movie in SampleData.conversationSample) {
+//        //Log.d("ФункцияПолучения", "SHAZAM2 ${movie.body}")
+//    }
+
+    return result
 }
 
 //@Preview

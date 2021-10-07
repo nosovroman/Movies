@@ -7,7 +7,7 @@ import com.example.arcticfoxcompose.SampleData
 import com.example.arcticfoxcompose.SampleData1
 
 class MovieListViewModel(): ViewModel() {
-    var movies: MutableState<List<Message>> = mutableStateOf(listOf())
+    var movies: MutableState<MutableList<Message>> = mutableStateOf(mutableListOf())
 
     //private val _movies: MutableLiveData<List<Message>> = MutableLiveData()
     //val movies: LiveData<List<Message>> get() = _movies
@@ -18,9 +18,4 @@ class MovieListViewModel(): ViewModel() {
         }
         movies.value = result
     }
-
-//    fun addMovie(newMovie: String) {
-//        val list = listOf<Message>(_movies.value)
-//        movies.value = list.add(newMovie)
-//    }
 }
