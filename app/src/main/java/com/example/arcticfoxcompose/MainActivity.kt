@@ -1,7 +1,5 @@
 package com.example.arcticfoxcompose
 
-//import khttp.get
-
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -29,10 +27,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.arcticfoxcompose.common.Common
 import com.example.arcticfoxcompose.ui.theme.*
-import okhttp3.*
-import java.io.IOException
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
+//const val BASE_URL = "https://api.themoviedb.org/3/"
+//const val BASE_URL = "https://jsonplaceholder.typicode.com/"
 
 object SampleData {
     var conversationSample = mutableListOf(
@@ -79,22 +81,46 @@ fun MainScreen() {
         MovieListView(messages = getMoviesByRequest(textState.value), state = textState)
     }
 
-    run("https://api.github.com/users/Evin1-/repos")
+    //run("https://api.github.com/users/Evin1-/repos")
+    getMyDiscover()
 }
 
-fun run(url: String) {
-    val client = OkHttpClient()
-    val request = Request.Builder()
-        .url(url)
-        .build()
+fun getMyDiscover() {
+    val movies = mutableListOf<Result>()
+    Common.retrofitService.getDiscover("ru").enqueue(
+        object : Callback<Discover> {
+            override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+                //Log.d("MyDiscover", "Hello bro")
+                val responseBody = response.body()!!.results
+                val myStringBuilder = StringBuilder()
+                for (myData in responseBody) {
+                    myStringBuilder.append("${myData.title}\n")
+                    movies.add(myData)
+                }
+                Log.d("MyDiscover", "END: \n $myStringBuilder")
+                //response.body()?.results?.map { println(it) }
+            }
 
-    client.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {}
-        override fun onResponse(call: Call, response: Response) {
-            Log.d("ФункцияRun", "SHAZAM123 ${response.body()?.string()}")
-        } //println(response.body()?.string())
-    })
+            override fun onFailure(call: Call<Discover>, t: Throwable) {
+                Log.d("ErRoRRRRR", "onFailureDiscover: "+ t.message)
+            }
+        }
+    )
 }
+
+//fun run(url: String) {
+//    val client = OkHttpClient()
+//    val request = Request.Builder()
+//        .url(url)
+//        .build()
+//
+//    client.newCall(request).enqueue(object : Callback {
+//        override fun onFailure(call: Call, e: IOException) {}
+//        override fun onResponse(call: Call, response: Response) {
+//            Log.d("ФункцияRun", "SHAZAM123 ${response.body()?.string()}")
+//        }
+//    })
+//}
 
 @Composable
 fun MovieListView(messages: MutableList<Message>, state: MutableState<String>) {
