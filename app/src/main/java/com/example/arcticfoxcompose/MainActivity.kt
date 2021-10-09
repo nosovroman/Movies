@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -18,7 +17,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +29,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import coil.compose.rememberImagePainter
 import com.example.arcticfoxcompose.common.Common
 import com.example.arcticfoxcompose.dataClasses.Discover
@@ -61,14 +69,43 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ArcticFoxComposeTheme {
-                MainScreen()
+                AppNavigator()
+                //MainScreen()
+            }
+        }
+    }
+
+    @Composable
+    fun AppNavigator() {
+        val navController = rememberNavController()
+
+        NavHost(
+            navController = navController,
+            startDestination = "moviesView"
+        ) {
+            composable("moviesView") { MainScreen(navController) }
+            composable(
+                "detailMoviesView/{movieId}",
+                arguments = listOf(
+                    navArgument("movieId") { type = NavType.IntType }
+                )
+            ) {
+                backStackEntry ->
+                backStackEntry?.arguments?.getInt("movieId")?.let { movieId ->
+                    DetailMovieScreen(movieId = movieId)
+                }
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun DetailMovieScreen(movieId: Int) {
+    Text("Detail Movie: $movieId")
+}
+
+@Composable
+fun MainScreen(navController: NavHostController) {
     //val movies = viewModel.movies.value
     var textState = remember { mutableStateOf(mutableListOf<Result>()) }
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
@@ -83,7 +120,7 @@ fun MainScreen() {
         //MovieListView(messages = viewModel.movies.value)
         //val x = textState.value.text
         //MovieListView(messages = getMoviesByRequest(textState.value), state = textState)
-        MovieListElem(state = textState)
+        MovieListElem(state = textState, navController = navController)
     }
 
     getMyDiscover(state = textState)
@@ -143,15 +180,14 @@ fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>
     )
 }
 
-
 // список фильмов
 @Composable
-fun MovieListElem(state: MutableState<MutableList<Result>>) {
+fun MovieListElem(state: MutableState<MutableList<Result>>, navController: NavHostController) {
     var movies = state.value
 
     LazyColumn {
         itemsIndexed(movies) { index, movie ->
-            MovieCardElem(movie)
+            MovieCardElem(movie = movie, navController = navController)
             if (index < movies.size - 1) {
                 Spacer(modifier = Modifier.padding(top = 8.dp))
                 Divider( color = SearchLineColorStart, thickness = 1.dp )
@@ -227,7 +263,8 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
 
 // конкретный фильм
 @Composable
-fun MovieCardElem(movie: Result) {
+fun MovieCardElem(movie: Result, navController: NavHostController) {
+        // установка формата даты
     val date = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val x = LocalDate.parse(movie.release_date)
         x.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
@@ -235,12 +272,19 @@ fun MovieCardElem(movie: Result) {
         movie.release_date
     }
 
+//    fun navigateToDetail() {
+//
+//    }
+
+
     Row (modifier = Modifier
         .padding(top = 8.dp)
-        .fillMaxWidth())//.border(width = 1.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)))
-    {
+        .fillMaxWidth()
+        .clickable {
+            navController.navigate("detailMoviesView/${movie.id}")
+        }
+    ) {
             // картинка фильма
-
         Box(
             modifier = Modifier
                 .width(120.dp)
@@ -266,13 +310,13 @@ fun MovieCardElem(movie: Result) {
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        var isExpanded by remember { mutableStateOf(false) }
+        //var isExpanded by remember { mutableStateOf(false) }
 
-        val surfaceColor: Color by animateColorAsState(
-            if (isExpanded) MaterialTheme.colors.primary else MaterialTheme.colors.surface
-        )
+//        val surfaceColor: Color by animateColorAsState(
+//            if (isExpanded) MaterialTheme.colors.primary else MaterialTheme.colors.surface
+//        )
             // информация о фильме
-        Column (modifier = Modifier.clickable { isExpanded = !isExpanded }) {
+        Column () { //modifier = Modifier.clickable { isExpanded = !isExpanded }
             // название фильма
             Text(
                 text = movie.title,
@@ -287,7 +331,7 @@ fun MovieCardElem(movie: Result) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 elevation = 1.dp,
-                color = surfaceColor,
+                //color = surfaceColor,
                 modifier = Modifier
                     .animateContentSize()
                     .padding(1.dp)
@@ -297,7 +341,7 @@ fun MovieCardElem(movie: Result) {
                     modifier = Modifier.padding(all = 4.dp),
                     color = MaterialTheme.colors.onSecondary,
                     style = MaterialTheme.typography.body2,
-                    maxLines = if (isExpanded) Int.MAX_VALUE else 1
+                    //maxLines = if (isExpanded) Int.MAX_VALUE else 1
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -312,47 +356,6 @@ fun MovieCardElem(movie: Result) {
         }
     }
 }
-
-// ---------------------------------- КОНЕЦ ---------------------------
-
-//data class Message(val author: String, val body: String)
-
-//fun getMoviesByRequest (requestMovie: String): MutableList<Message> {
-////    SampleData.conversationSample.add(
-////        Message(
-////            "Тор: Любовь и Гром",
-////            "Супер-фильм, который стоит всем посмотреть!"
-////        )
-////    )
-//
-//    // фильтрация
-//    var result = mutableListOf<Message>()
-//    //Log.d("ФункцияПолучения", "SHAZAM! requestMovie is /${requestMovie}/")
-//    if (requestMovie != "") {
-//        for (temp in SampleData.conversationSample) {
-//            //Log.d("ФункцияПолучения", "SHAZAM0 ${temp.body}, by $requestMovie")
-//            if (temp.body.contains(requestMovie, ignoreCase = true)) {
-//                result.add(temp)
-//            }
-//        }
-//
-////        //  робит со списками, необходимо преобразование
-////        var temp = SampleData.conversationSample.filter { curMovie ->
-////            curMovie.author.contains(requestMovie)
-////        }
-////        temp.toMutableList()
-//    }
-//    else {
-//        result = SampleData.conversationSample
-//        //Log.d("ФункцияПолучения", "SHAZAM1")
-//    }
-//
-////    for (movie in SampleData.conversationSample) {
-////        //Log.d("ФункцияПолучения", "SHAZAM2 ${movie.body}")
-////    }
-//
-//    return result
-//}
 
 // ---------------------------------- КОНЕЦ ---------------------------
 
