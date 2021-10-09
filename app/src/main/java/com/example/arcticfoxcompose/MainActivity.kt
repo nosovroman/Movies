@@ -12,7 +12,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
@@ -23,11 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.arcticfoxcompose.common.Common
+import com.example.arcticfoxcompose.dataClasses.Discover
+import com.example.arcticfoxcompose.dataClasses.Result
 import com.example.arcticfoxcompose.ui.theme.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -36,18 +38,18 @@ import retrofit2.Response
 //const val BASE_URL = "https://api.themoviedb.org/3/"
 //const val BASE_URL = "https://jsonplaceholder.typicode.com/"
 
-object SampleData {
-    var conversationSample = mutableListOf(
-        Message(
-            "Colleague",
-            "Test...Test...Test..."
-        ),
-        Message(
-            "Colleague",
-            "Hey, take a look at Jetpack Compose, it's great!"
-        ),
-    )
-}
+//object SampleData {
+//    var conversationSample = mutableListOf(
+//        Message(
+//            "Colleague",
+//            "Test...Test...Test..."
+//        ),
+//        Message(
+//            "Colleague",
+//            "Hey, take a look at Jetpack Compose, it's great!"
+//        ),
+//    )
+//}
 
 class MainActivity : ComponentActivity() {
 
@@ -125,7 +127,10 @@ fun MovieListView(state: MutableState<MutableList<Result>>) {
 //            if (searchedText == "") { MessageCardView(message) }
 //            else {  }
             MessageCardView(movie)
-            if (index < movies.size - 1) Divider( color = SearchLineColorStart, thickness = 1.dp )
+            if (index < movies.size - 1) {
+                Spacer(modifier = Modifier.padding(top = 8.dp))
+                Divider( color = SearchLineColorStart, thickness = 1.dp )
+            }
         }
     }
 }
@@ -192,19 +197,26 @@ fun SearchFieldView(state: MutableState<MutableList<Result>>) {
 
 @Composable
 fun MessageCardView(movie: Result) {
-    var msg = Message(movie.title, movie.release_date)
+    //var msg = Message(movie.title, movie.release_date)
 
     Row (modifier = Modifier
         .padding(top = 8.dp)
         .fillMaxWidth())//.border(width = 1.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)))
     {
+            // картинка фильма
         Image(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
+            painter = painterResource(id = R.drawable.default_image),
             contentDescription = "Image Text",
+            contentScale = ContentScale.FillBounds,
             modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .border(2.5.dp, MaterialTheme.colors.secondary, CircleShape)
+                //.size(40.dp)
+                .width(120.dp)
+                .height(170.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .border(2.5.dp, MaterialTheme.colors.secondary, shape = RoundedCornerShape(10.dp))
+                //.scale(Bounds)
+                //.alignment = alignment.alignment,
+                //.contentScale = scale.scaleType
         )
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -213,14 +225,17 @@ fun MessageCardView(movie: Result) {
         val surfaceColor: Color by animateColorAsState(
             if (isExpanded) MaterialTheme.colors.primary else MaterialTheme.colors.surface
         )
-
+            // информация о фильме
         Column (modifier = Modifier.clickable { isExpanded = !isExpanded }) {
+                // название фильма
             Text(
-                text = msg.author,
-                color = MaterialTheme.colors.secondaryVariant,
-                style = MaterialTheme.typography.subtitle2
+                text = movie.title,
+                color = DarkText,
+                style = MaterialTheme.typography.subtitle2,
+                fontSize = 16.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
+                // дата выхода
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 elevation = 1.dp,
@@ -230,54 +245,63 @@ fun MessageCardView(movie: Result) {
                     .padding(1.dp)
             ) {
                 Text(
-                    text = msg.body,
+                    text = "Дата выхода: ${movie.release_date}",
                     modifier = Modifier.padding(all = 4.dp),
                     style = MaterialTheme.typography.body2,
                     maxLines = if (isExpanded) Int.MAX_VALUE else 1
                 )
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Рейтинг: ${movie.vote_average}/10",
+                color = HintColor,
+                modifier = Modifier.padding(all = 4.dp),
+                style = MaterialTheme.typography.body2,
+            )
         }
     }
 }
 
-data class Message(val author: String, val body: String)
+//data class Message(val author: String, val body: String)
 
-fun getMoviesByRequest (requestMovie: String): MutableList<Message> {
-//    SampleData.conversationSample.add(
-//        Message(
-//            "Тор: Любовь и Гром",
-//            "Супер-фильм, который стоит всем посмотреть!"
-//        )
-//    )
-
-    // фильтрация
-    var result = mutableListOf<Message>()
-    //Log.d("ФункцияПолучения", "SHAZAM! requestMovie is /${requestMovie}/")
-    if (requestMovie != "") {
-        for (temp in SampleData.conversationSample) {
-            //Log.d("ФункцияПолучения", "SHAZAM0 ${temp.body}, by $requestMovie")
-            if (temp.body.contains(requestMovie, ignoreCase = true)) {
-                result.add(temp)
-            }
-        }
-
-//        //  робит со списками, необходимо преобразование
-//        var temp = SampleData.conversationSample.filter { curMovie ->
-//            curMovie.author.contains(requestMovie)
+//fun getMoviesByRequest (requestMovie: String): MutableList<Message> {
+////    SampleData.conversationSample.add(
+////        Message(
+////            "Тор: Любовь и Гром",
+////            "Супер-фильм, который стоит всем посмотреть!"
+////        )
+////    )
+//
+//    // фильтрация
+//    var result = mutableListOf<Message>()
+//    //Log.d("ФункцияПолучения", "SHAZAM! requestMovie is /${requestMovie}/")
+//    if (requestMovie != "") {
+//        for (temp in SampleData.conversationSample) {
+//            //Log.d("ФункцияПолучения", "SHAZAM0 ${temp.body}, by $requestMovie")
+//            if (temp.body.contains(requestMovie, ignoreCase = true)) {
+//                result.add(temp)
+//            }
 //        }
-//        temp.toMutableList()
-    }
-    else {
-        result = SampleData.conversationSample
-        //Log.d("ФункцияПолучения", "SHAZAM1")
-    }
-
-//    for (movie in SampleData.conversationSample) {
-//        //Log.d("ФункцияПолучения", "SHAZAM2 ${movie.body}")
+//
+////        //  робит со списками, необходимо преобразование
+////        var temp = SampleData.conversationSample.filter { curMovie ->
+////            curMovie.author.contains(requestMovie)
+////        }
+////        temp.toMutableList()
 //    }
+//    else {
+//        result = SampleData.conversationSample
+//        //Log.d("ФункцияПолучения", "SHAZAM1")
+//    }
+//
+////    for (movie in SampleData.conversationSample) {
+////        //Log.d("ФункцияПолучения", "SHAZAM2 ${movie.body}")
+////    }
+//
+//    return result
+//}
 
-    return result
-}
+// ---------------------------------- КОНЕЦ ---------------------------
 
 //@Preview
 //@Composable

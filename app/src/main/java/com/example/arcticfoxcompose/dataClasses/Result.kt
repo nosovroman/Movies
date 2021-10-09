@@ -1,4 +1,4 @@
-package com.example.arcticfoxcompose
+package com.example.arcticfoxcompose.dataClasses
 
 data class Result(
     val adult: Boolean,

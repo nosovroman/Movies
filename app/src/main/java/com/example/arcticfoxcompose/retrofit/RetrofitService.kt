@@ -1,6 +1,6 @@
 package com.example.arcticfoxcompose.retrofit
 
-import com.example.arcticfoxcompose.Discover
+import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.common.Common
 import retrofit2.Call
 import retrofit2.http.GET

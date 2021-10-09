@@ -12,3 +12,4 @@ val SearchLineColorEnd = Color(0xFF001AFF)
 val Invisible = Color(0x0)
 val SearchLineTxtColor = Color.Black
 val HintColor = Color(0xFFA0AAFF)
+val DarkText = Color(0xFFFFEB3B)

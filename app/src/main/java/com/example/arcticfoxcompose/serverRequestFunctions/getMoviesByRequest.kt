@@ -1,9 +1,5 @@
 package com.example.arcticfoxcompose.serverRequestFunctions
 
-import android.util.Log
-import com.example.arcticfoxcompose.dataClasses.Message
-import com.example.arcticfoxcompose.SampleData
-
 //fun getMoviesByRequest (requestMovie: String?) {
 //    SampleData.conversationSample.add(
 //        Message(
