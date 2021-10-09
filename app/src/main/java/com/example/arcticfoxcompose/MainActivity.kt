@@ -75,26 +75,24 @@ fun MainScreen() {
 //        }
 
         Spacer(modifier = Modifier.height(10.dp))
-        SearchFieldView(state = textState)
+        SearchFieldElem(state = textState)
         Spacer(modifier = Modifier.height(10.dp))
         //MovieListView(messages = viewModel.movies.value)
         //val x = textState.value.text
         //MovieListView(messages = getMoviesByRequest(textState.value), state = textState)
-        MovieListView(state = textState)
+        MovieListElem(state = textState)
     }
 
-    //run("https://api.github.com/users/Evin1-/repos")
-
     getMyDiscover(state = textState)
-
-    //var resDef: Deferred<List<Result>> = async {getMyDiscover()}
-    //var res = resDef.await()
-    //Log.d("MyDiscover", "RESULT: \n ${x?.first()?.title}")
+    //getMySearchDiscover(state = textState, request = "Веном")
 }
 
+// --- получение фильмов
+// перезапись: state
 fun getMyDiscover(state: MutableState<MutableList<Result>>) {
     val movies = mutableListOf<Result>()
-    Common.retrofitService.getDiscover("ru").enqueue(
+
+    Common.retrofitService.getDiscover().enqueue(
         object : Callback<Discover> {
             override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
                 //Log.d("MyDiscover", "Hello bro")
@@ -106,8 +104,6 @@ fun getMyDiscover(state: MutableState<MutableList<Result>>) {
                 }
                 Log.d("MyDiscover", "END: \n $myStringBuilder")
                 state.value = movies
-                //emit()
-                //response.body()?.results?.map { println(it) }
             }
 
             override fun onFailure(call: Call<Discover>, t: Throwable) {
@@ -117,16 +113,42 @@ fun getMyDiscover(state: MutableState<MutableList<Result>>) {
     )
 }
 
+// --- получение фильмов
+// перезапись: state
+fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>>) {
+    val movies = mutableListOf<Result>()
+
+    Log.d("MyDiscover", "Hello bro212")
+    Common.retrofitService.getSearchDiscover(query = request).enqueue(
+        object : Callback<Discover> {
+            override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+//                Log.d("MyDiscover", "Hello bro")
+                val responseBody = response.body()!!.results
+                val myStringBuilder = StringBuilder()
+                for (myData in responseBody) {
+                    myStringBuilder.append("${myData.title}\n")
+                    movies.add(myData)
+                }
+                Log.d("MyDiscover", "END: \n $myStringBuilder")
+                state.value = movies
+            }
+
+            override fun onFailure(call: Call<Discover>, t: Throwable) {
+                Log.d("ErRoR", "onFailureDiscover: "+ t.message)
+            }
+        }
+    )
+}
+
+
+// список фильмов
 @Composable
-fun MovieListView(state: MutableState<MutableList<Result>>) {
+fun MovieListElem(state: MutableState<MutableList<Result>>) {
     var movies = state.value
 
     LazyColumn {
-        //searchedText = state.value
         itemsIndexed(movies) { index, movie ->
-//            if (searchedText == "") { MessageCardView(message) }
-//            else {  }
-            MessageCardView(movie)
+            MovieCardElem(movie)
             if (index < movies.size - 1) {
                 Spacer(modifier = Modifier.padding(top = 8.dp))
                 Divider( color = SearchLineColorStart, thickness = 1.dp )
@@ -135,14 +157,10 @@ fun MovieListView(state: MutableState<MutableList<Result>>) {
     }
 }
 
+// строка поиска
 @Composable
-fun SearchFieldView(state: MutableState<MutableList<Result>>) {
+fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
     var searchLineState = remember { mutableStateOf("") }
-
-    fun updateListMovies () {
-        getMyDiscover(state)
-        //state.value = value
-    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -169,14 +187,20 @@ fun SearchFieldView(state: MutableState<MutableList<Result>>) {
                 ),
             keyboardActions = KeyboardActions(onDone = {
                 //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
+                if (searchLineState.value.trim() != "") {
+                    getMySearchDiscover(request = searchLineState.value, state = state)
+                }
+//                else {
+//                    getMyDiscover(state = state)
+//                }
             }),
             value = searchLineState.value,
             onValueChange = {
                 searchLineState.value = it
-                if (searchLineState.value == "") updateListMovies()//state.value = searchLineState.value
+                if (searchLineState.value == "") getMyDiscover(state = state)
             },
             singleLine = true,
-            textStyle = TextStyle(color = SearchLineTxtColor, fontSize = 20.sp),
+            textStyle = TextStyle(color = SearchLineColorEnd, fontSize = 20.sp),
             placeholder = { Text(text = "Введите название фильма", color = HintColor) },
             trailingIcon = {
                 IconButton(onClick = {
@@ -195,8 +219,9 @@ fun SearchFieldView(state: MutableState<MutableList<Result>>) {
     }
 }
 
+// конкретный фильм
 @Composable
-fun MessageCardView(movie: Result) {
+fun MovieCardElem(movie: Result) {
     //var msg = Message(movie.title, movie.release_date)
 
     Row (modifier = Modifier
@@ -261,6 +286,8 @@ fun MessageCardView(movie: Result) {
         }
     }
 }
+
+// ---------------------------------- КОНЕЦ ---------------------------
 
 //data class Message(val author: String, val body: String)
 
