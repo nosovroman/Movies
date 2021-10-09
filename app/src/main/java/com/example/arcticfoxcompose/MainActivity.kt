@@ -1,5 +1,6 @@
 package com.example.arcticfoxcompose
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -23,10 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberImagePainter
 import com.example.arcticfoxcompose.common.Common
 import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.dataClasses.Result
@@ -34,6 +35,8 @@ import com.example.arcticfoxcompose.ui.theme.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 //const val BASE_URL = "https://api.themoviedb.org/3/"
 //const val BASE_URL = "https://jsonplaceholder.typicode.com/"
@@ -204,6 +207,9 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
             placeholder = { Text(text = "Введите название фильма", color = HintColor) },
             trailingIcon = {
                 IconButton(onClick = {
+                    if (searchLineState.value.trim() != "") {
+                        getMySearchDiscover(request = searchLineState.value, state = state)
+                    }
                     //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
 
                     //getMoviesByRequest(searchLineState.toString());
@@ -222,27 +228,42 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
 // конкретный фильм
 @Composable
 fun MovieCardElem(movie: Result) {
-    //var msg = Message(movie.title, movie.release_date)
+    val date = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val x = LocalDate.parse(movie.release_date)
+        x.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+    } else {
+        movie.release_date
+    }
 
     Row (modifier = Modifier
         .padding(top = 8.dp)
         .fillMaxWidth())//.border(width = 1.dp, color = Color.Blue, shape = RoundedCornerShape(10.dp)))
     {
             // картинка фильма
-        Image(
-            painter = painterResource(id = R.drawable.default_image),
-            contentDescription = "Image Text",
-            contentScale = ContentScale.FillBounds,
+
+        Box(
             modifier = Modifier
-                //.size(40.dp)
                 .width(120.dp)
-                .height(170.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .border(2.5.dp, MaterialTheme.colors.secondary, shape = RoundedCornerShape(10.dp))
-                //.scale(Bounds)
-                //.alignment = alignment.alignment,
-                //.contentScale = scale.scaleType
-        )
+                .height(170.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                //painter = painterResource(id = R.drawable.default_image),
+                painter = rememberImagePainter("${Common.BASE_URL_IMAGES}${Common.POSTER_SIZE}${movie.poster_path}"),
+                contentDescription = "Image Text",
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier
+                    //.size(40.dp)
+                    .width(120.dp)
+                    .height(170.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(
+                        2.5.dp, MaterialTheme.colors.secondary, shape = RoundedCornerShape(10.dp)
+                    )
+            )
+        }
+
+
         Spacer(modifier = Modifier.width(8.dp))
 
         var isExpanded by remember { mutableStateOf(false) }
@@ -252,15 +273,17 @@ fun MovieCardElem(movie: Result) {
         )
             // информация о фильме
         Column (modifier = Modifier.clickable { isExpanded = !isExpanded }) {
-                // название фильма
+            // название фильма
             Text(
                 text = movie.title,
-                color = DarkText,
+                color = MaterialTheme.colors.onSurface,
                 style = MaterialTheme.typography.subtitle2,
                 fontSize = 16.sp
             )
+
             Spacer(modifier = Modifier.height(4.dp))
-                // дата выхода
+
+                // дата выхода (релиза)
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 elevation = 1.dp,
@@ -270,16 +293,19 @@ fun MovieCardElem(movie: Result) {
                     .padding(1.dp)
             ) {
                 Text(
-                    text = "Дата выхода: ${movie.release_date}",
+                    text = "Дата релиза: $date",
                     modifier = Modifier.padding(all = 4.dp),
+                    color = MaterialTheme.colors.onSecondary,
                     style = MaterialTheme.typography.body2,
                     maxLines = if (isExpanded) Int.MAX_VALUE else 1
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
+
+                // рейтинг
             Text(
-                text = "Рейтинг: ${movie.vote_average}/10",
-                color = HintColor,
+                text = "Рейтинг: ${movie.vote_average} ⭐",
+                color = MaterialTheme.colors.onSecondary,
                 modifier = Modifier.padding(all = 4.dp),
                 style = MaterialTheme.typography.body2,
             )
