@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -27,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.compose.rememberImagePainter
 import com.example.arcticfoxcompose.common.Common
+import com.example.arcticfoxcompose.components.DetailMovieScreen
 import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.dataClasses.Result
 import com.example.arcticfoxcompose.ui.theme.*
@@ -46,22 +47,6 @@ import retrofit2.Response
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-//const val BASE_URL = "https://api.themoviedb.org/3/"
-//const val BASE_URL = "https://jsonplaceholder.typicode.com/"
-
-//object SampleData {
-//    var conversationSample = mutableListOf(
-//        Message(
-//            "Colleague",
-//            "Test...Test...Test..."
-//        ),
-//        Message(
-//            "Colleague",
-//            "Hey, take a look at Jetpack Compose, it's great!"
-//        ),
-//    )
-//}
-
 class MainActivity : ComponentActivity() {
 
     //private val viewModel: MovieListViewModel by viewModels()
@@ -70,7 +55,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             ArcticFoxComposeTheme {
                 AppNavigator()
-                //MainScreen()
             }
         }
     }
@@ -99,37 +83,28 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun DetailMovieScreen(movieId: Int) {
-    Text("Detail Movie: $movieId")
-}
+//@Composable
+//fun DetailMovieScreen(movieId: Int) {
+//    Text("Detail Movie: $movieId")
+//}
 
 @Composable
 fun MainScreen(navController: NavHostController) {
-    //val movies = viewModel.movies.value
     var textState = remember { mutableStateOf(mutableListOf<Result>()) }
+    var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_SOMETHING) }
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
-        //val movies = viewModel.movies.value
-//        for (movie in movies) {
-//            Log.d("ФункцияПолучения", "SHAZAM3 ${movies.last().body}")
-//        }
-
         Spacer(modifier = Modifier.height(10.dp))
-        SearchFieldElem(state = textState)
+        SearchFieldElem(state = textState, resultOfLoad = resultOfLoad)
         Spacer(modifier = Modifier.height(10.dp))
-        //MovieListView(messages = viewModel.movies.value)
-        //val x = textState.value.text
-        //MovieListView(messages = getMoviesByRequest(textState.value), state = textState)
-        MovieListElem(state = textState, navController = navController)
+        MovieListElem(state = textState, navController = navController, resultOfLoad = resultOfLoad)
     }
 
-    getMyDiscover(state = textState)
-    //getMySearchDiscover(state = textState, request = "Веном")
+    getMyDiscover(state = textState, resultOfLoad = resultOfLoad)
 }
 
 // --- получение фильмов
 // перезапись: state
-fun getMyDiscover(state: MutableState<MutableList<Result>>) {
+fun getMyDiscover(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>) {
     val movies = mutableListOf<Result>()
 
     Common.retrofitService.getDiscover().enqueue(
@@ -144,6 +119,9 @@ fun getMyDiscover(state: MutableState<MutableList<Result>>) {
                 }
                 Log.d("MyDiscover", "END: \n $myStringBuilder")
                 state.value = movies
+
+                if (movies.isEmpty()) resultOfLoad.value = Common.LOAD_STATE_NOTHING
+                else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
             }
 
             override fun onFailure(call: Call<Discover>, t: Throwable) {
@@ -155,42 +133,86 @@ fun getMyDiscover(state: MutableState<MutableList<Result>>) {
 
 // --- получение фильмов
 // перезапись: state
-fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>>) {
-    val movies = mutableListOf<Result>()
+fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>>, letShowDialog: MutableState<Boolean>, resultOfLoad: MutableState<Int>) {
+    try {
+        val movies = mutableListOf<Result>()
 
-    Log.d("MyDiscover", "Hello bro212")
-    Common.retrofitService.getSearchDiscover(query = request).enqueue(
-        object : Callback<Discover> {
-            override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+        Log.d("MyDiscover", "Hello bro212")
+        Common.retrofitService.getSearchDiscover(query = request).enqueue(
+            object : Callback<Discover> {
+                override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
 //                Log.d("MyDiscover", "Hello bro")
-                val responseBody = response.body()!!.results
-                val myStringBuilder = StringBuilder()
-                for (myData in responseBody) {
-                    myStringBuilder.append("${myData.title}\n")
-                    movies.add(myData)
-                }
-                Log.d("MyDiscover", "END: \n $myStringBuilder")
-                state.value = movies
-            }
+                    val responseBody = response.body()!!.results
+                    val myStringBuilder = StringBuilder()
+                    for (myData in responseBody) {
+                        myStringBuilder.append("${myData.title}\n")
+                        movies.add(myData)
+                    }
+                    Log.d("MyDiscover", "END: \n $myStringBuilder")
+                    state.value = movies
 
-            override fun onFailure(call: Call<Discover>, t: Throwable) {
-                Log.d("ErRoR", "onFailureDiscover: "+ t.message)
+                    if (movies.isEmpty()) resultOfLoad.value = Common.LOAD_STATE_NOTHING
+                    else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
+                }
+
+                override fun onFailure(call: Call<Discover>, t: Throwable) {
+                    Log.d("ErRoR", "onFailureDiscover: " + t.message)
+                }
             }
-        }
-    )
+        )
+    } catch (e: Exception) {
+        Log.d("POKEMON", e.toString())
+        //letShowDialog.value = true
+    }
+}
+
+@Composable
+fun ShowErrorDialog(letShowDialog: MutableState<Boolean>) {
+
+    if (letShowDialog.value) {
+        AlertDialog(
+            onDismissRequest = {
+            },
+            title = {
+                Text(text = "Alert Dialog")
+            },
+            text = {
+                Text("JetPack Compose Alert Dialog!")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    letShowDialog.value = false
+                }) {
+                    Text("Ок")
+                }
+            }
+        )
+    }
 }
 
 // список фильмов
 @Composable
-fun MovieListElem(state: MutableState<MutableList<Result>>, navController: NavHostController) {
+fun MovieListElem(state: MutableState<MutableList<Result>>, navController: NavHostController, resultOfLoad: MutableState<Int> ) {
     var movies = state.value
 
-    LazyColumn {
-        itemsIndexed(movies) { index, movie ->
-            MovieCardElem(movie = movie, navController = navController)
-            if (index < movies.size - 1) {
-                Spacer(modifier = Modifier.padding(top = 8.dp))
-                Divider( color = SearchLineColorStart, thickness = 1.dp )
+    if (resultOfLoad.value == Common.LOAD_STATE_NOTHING) {
+        Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "По Вашему запросу ничего не найдено :(",
+                modifier = Modifier.padding(top = 10.dp),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
+    if (movies.isNotEmpty()) {
+        LazyColumn {
+            itemsIndexed(movies) { index, movie ->
+                MovieCardElem(movie = movie, navController = navController)
+                if (index < movies.size - 1) {
+                    Spacer(modifier = Modifier.padding(top = 8.dp))
+                    Divider(color = SearchLineColorStart, thickness = 1.dp)
+                }
             }
         }
     }
@@ -198,8 +220,11 @@ fun MovieListElem(state: MutableState<MutableList<Result>>, navController: NavHo
 
 // строка поиска
 @Composable
-fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
+fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>) {
     var searchLineState = remember { mutableStateOf("") }
+    var letShowErrorDialog =  remember { mutableStateOf(false) }
+
+    ShowErrorDialog(letShowErrorDialog)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -224,19 +249,20 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
                     //brush = Brush.horizontalGradient(listOf(SearchLineColorStart, SearchLineColorEnd)),
                     shape = RoundedCornerShape(10.dp)
                 ),
-            keyboardActions = KeyboardActions(onDone = {
-                //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
-                if (searchLineState.value.trim() != "") {
-                    getMySearchDiscover(request = searchLineState.value, state = state)
-                }
-//                else {
-//                    getMyDiscover(state = state)
+//            keyboardActions = KeyboardActions(onDone = {
+//                //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
+//                if (searchLineState.value.trim() != "") {
+//                    getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowErrorDialog)
 //                }
-            }),
+////                else {
+////                    getMyDiscover(state = state)
+////                }
+//            }),
             value = searchLineState.value,
             onValueChange = {
                 searchLineState.value = it
-                if (searchLineState.value == "") getMyDiscover(state = state)
+                if (searchLineState.value.trim() == "")  { getMyDiscover(state = state, resultOfLoad = resultOfLoad) }
+                else { getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowErrorDialog, resultOfLoad = resultOfLoad) }
             },
             singleLine = true,
             textStyle = TextStyle(color = SearchLineColorEnd, fontSize = 20.sp),
@@ -244,7 +270,7 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
             trailingIcon = {
                 IconButton(onClick = {
                     if (searchLineState.value.trim() != "") {
-                        getMySearchDiscover(request = searchLineState.value, state = state)
+                        getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
                     }
                     //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
 
@@ -265,17 +291,20 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>) {
 @Composable
 fun MovieCardElem(movie: Result, navController: NavHostController) {
         // установка формата даты
-    val date = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val x = LocalDate.parse(movie.release_date)
-        x.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+    Log.d("POKEMON", "${movie.title}: ${movie.release_date.toString()}")
+    val date = if (movie.release_date != null && movie.release_date != "") {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val x = LocalDate.parse(movie.release_date)
+            x.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+        } else {
+            movie.release_date
+        }
     } else {
-        movie.release_date
+        "-"
     }
 
-//    fun navigateToDetail() {
-//
-//    }
 
+    Log.d("PATH", "${movie.title}: ${movie.poster_path}")
 
     Row (modifier = Modifier
         .padding(top = 8.dp)
@@ -293,7 +322,8 @@ fun MovieCardElem(movie: Result, navController: NavHostController) {
         ) {
             Image(
                 //painter = painterResource(id = R.drawable.default_image),
-                painter = rememberImagePainter("${Common.BASE_URL_IMAGES}${Common.POSTER_SIZE}${movie.poster_path}"),
+                painter = if (movie.poster_path != null) {rememberImagePainter("${Common.BASE_URL_IMAGES}${Common.POSTER_SIZE}${movie.poster_path}")}
+                else {rememberImagePainter(R.drawable.default_image)},
                 contentDescription = "Image Text",
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier

@@ -12,6 +12,9 @@ object Common {
     val retrofitService: RetrofitService
         get() = RetrofitClient.getClient(BASE_URL).create(RetrofitService::class.java)
 
+    const val LOAD_STATE_NOTHING = 0
+    const val LOAD_STATE_SOMETHING = 1
+
     const val FETCH_DISCOVER = "discover"
     const val FETCH_SEARCH = "search"
 }

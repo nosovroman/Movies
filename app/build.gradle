@@ -63,6 +63,9 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:1.0.3"
     debugImplementation "androidx.compose.ui:ui-tooling:1.0.3"
 
+    implementation 'androidx.ui:ui-layout:0.1.0-dev02'
+    implementation 'androidx.ui:ui-material:0.1.0-dev02'
+
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0'
 
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
