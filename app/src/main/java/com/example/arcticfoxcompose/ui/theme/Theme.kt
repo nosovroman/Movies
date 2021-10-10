@@ -12,7 +12,8 @@ private val DarkColorPalette = darkColors(
     primaryVariant = Purple700,
     secondary = Teal200,
     onSurface = DarkText,
-    onSecondary = HintColor
+    onSecondary = HintColor,
+    background = Color.Black
 )
 
 private val LightColorPalette = lightColors(
@@ -20,7 +21,8 @@ private val LightColorPalette = lightColors(
     primaryVariant = Purple700,
     secondary = Purple200,
     onSurface = Purple200,
-    onSecondary = Color.Black
+    onSecondary = Color.Black,
+    background = Color.White
 
     // Other default colors to override
     /*background = Color.White,

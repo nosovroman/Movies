@@ -8,7 +8,8 @@ object Common {
     const val API_KEY = "f1c1fa32aa618e6adc168c3cc3cc6c46"
     const val LANGUAGE = "ru"
     const val BASE_URL_IMAGES = "http://image.tmdb.org/t/p/"
-    const val POSTER_SIZE = "w154"
+    const val POSTER_SIZE_LIST = "w154" // "w92","w154","w185","w342","w500","w780","original"
+    const val POSTER_SIZE_MOVIE = "w342"
     val retrofitService: RetrofitService
         get() = RetrofitClient.getClient(BASE_URL).create(RetrofitService::class.java)
 

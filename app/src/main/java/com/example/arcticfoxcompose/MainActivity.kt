@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,7 +38,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.compose.rememberImagePainter
 import com.example.arcticfoxcompose.common.Common
-import com.example.arcticfoxcompose.components.DetailMovieScreen
 import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.dataClasses.Result
 import com.example.arcticfoxcompose.ui.theme.*
@@ -322,8 +322,8 @@ fun MovieCardElem(movie: Result, navController: NavHostController) {
         ) {
             Image(
                 //painter = painterResource(id = R.drawable.default_image),
-                painter = if (movie.poster_path != null) {rememberImagePainter("${Common.BASE_URL_IMAGES}${Common.POSTER_SIZE}${movie.poster_path}")}
-                else {rememberImagePainter(R.drawable.default_image)},
+                painter = if (movie.poster_path != null) { rememberImagePainter("${Common.BASE_URL_IMAGES}${Common.POSTER_SIZE_LIST}${movie.poster_path}") }
+                else { painterResource(R.drawable.default_image) },
                 contentDescription = "Image Text",
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier
