@@ -1,6 +1,7 @@
 package com.example.arcticfoxcompose.retrofit
 
 import com.example.arcticfoxcompose.common.Common
+import com.example.arcticfoxcompose.dataClasses.DetailMovie.DetailMovie
 import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.dataClasses.Gallery
 import retrofit2.Call
@@ -19,5 +20,9 @@ interface RetrofitService {
         // получение галереи фильма /movie/{movie_id}/images
     @GET("movie/{movie_id}/images?api_key=${Common.API_KEY}&language=${Common.LANGUAGE}")
     fun getGallery(@Path("movie_id") movieId: Int): Call<Gallery>
+
+    // получение детальной информации о фильме
+    @GET("movie/{movie_id}?api_key=${Common.API_KEY}&language=${Common.LANGUAGE}")
+    fun getDetailMovie(@Path("movie_id") movieId: Int): Call<DetailMovie>
 
 }//, @Query("language") lan: String

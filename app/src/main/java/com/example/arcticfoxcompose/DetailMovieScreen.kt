@@ -2,9 +2,7 @@ package com.example.arcticfoxcompose
 
 import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,20 +13,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
 import com.example.arcticfoxcompose.common.Common
+import com.example.arcticfoxcompose.dataClasses.DetailMovie.DetailMovie
+import com.example.arcticfoxcompose.dataClasses.DetailMovie.NeedDetailMovie
 import com.example.arcticfoxcompose.dataClasses.Gallery
 import com.example.arcticfoxcompose.dataClasses.Poster
 import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -36,8 +32,9 @@ import retrofit2.Response
 @Composable
 fun DetailMovieScreen(movieId: Int) {
     var posterState = remember { mutableStateOf(mutableListOf<Poster>()) }
+    var detailState = remember { mutableStateOf(NeedDetailMovie()) }
 
-    loadMovieInfo(movieId = movieId, posterState = posterState)
+    loadMovieInfo(movieId = movieId, posterState = posterState, detailState = detailState)
 
     //Box(modifier = Modifier
     //    .fillMaxSize()
@@ -50,8 +47,9 @@ fun DetailMovieScreen(movieId: Int) {
     //}
 }
 
-fun loadMovieInfo(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
+fun loadMovieInfo(movieId: Int, posterState: MutableState<MutableList<Poster>>, detailState: MutableState<NeedDetailMovie>) {
     getGallery(movieId = movieId, posterState = posterState)
+    getDetailMovie(movieId = movieId, detailState = detailState)
 }
 
 @OptIn(ExperimentalPagerApi::class)
@@ -101,24 +99,24 @@ fun GalleryElem(posterState: MutableState<MutableList<Poster>>) {
 }
 
 
-@OptIn(ExperimentalPagerApi::class)
-@Preview
-@Composable
-fun PreviewConversation() {
-    Box(modifier = Modifier.background(color = Color.Gray), contentAlignment = Alignment.TopStart) {
-        HorizontalPager(count = 1, modifier = Modifier.align(Alignment.TopStart)) { index ->
-            Image(
-                painter = painterResource(R.drawable.default_image),
-                contentDescription = "Image Text",
-                //contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(2.5.dp, color = Color.Yellow)
-            )
-        }
-    }
-}
+//@OptIn(ExperimentalPagerApi::class)
+//@Preview
+//@Composable
+//fun PreviewConversation() {
+//    Box(modifier = Modifier.background(color = Color.Gray), contentAlignment = Alignment.TopStart) {
+//        HorizontalPager(count = 1, modifier = Modifier.align(Alignment.TopStart)) { index ->
+//            Image(
+//                painter = painterResource(R.drawable.default_image),
+//                contentDescription = "Image Text",
+//                //contentScale = ContentScale.FillWidth,
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .clip(RoundedCornerShape(10.dp))
+//                    .border(2.5.dp, color = Color.Yellow)
+//            )
+//        }
+//    }
+//}
 
 fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
     val movieInfo = mutableListOf<Poster>()
@@ -126,7 +124,6 @@ fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
     Common.retrofitService.getGallery(movieId).enqueue(
         object : Callback<Gallery> {
             override fun onResponse(call: Call<Gallery>, response: Response<Gallery>) {
-//                Log.d("MyDiscover", "Hello bro")
                 val responseBody = response.body()!!.posters
                 val myStringBuilder = StringBuilder()
                 for (myData in responseBody) {
@@ -138,6 +135,41 @@ fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
             }
 
             override fun onFailure(call: Call<Gallery>, t: Throwable) {
+                Log.d("ErRoR", "onFailureDiscover: " + t.message)
+            }
+        }
+    )
+}
+
+fun getDetailMovie(movieId: Int, detailState: MutableState<NeedDetailMovie>) {
+    // movieInfo = mutableListOf<NeedDetailMovie>()
+
+    Common.retrofitService.getDetailMovie(movieId).enqueue(
+        object : Callback<DetailMovie> {
+            override fun onResponse(call: Call<DetailMovie>, response: Response<DetailMovie>) {
+                //val responseBody = response.body()!!.posters
+                val responseBody = response.body()
+                val genres = responseBody?.genres?.map { it.name } ?: listOf()
+                val title = responseBody?.title ?: ""
+                val release_date = responseBody?.release_date ?: "-"
+                val vote_average = responseBody?.vote_average ?: 0.0
+                val video = responseBody?.video ?: false
+                val overview = responseBody?.overview ?: "Описание отсутствует"
+
+                val needDetailMovie = NeedDetailMovie(
+                    genres = genres,
+                    title = title,
+                    release_date = release_date,
+                    vote_average = vote_average,
+                    video = video,
+                    overview = overview
+                )
+
+                Log.d("MyDetail", "END: \n $needDetailMovie")
+                detailState.value = needDetailMovie
+            }
+
+            override fun onFailure(call: Call<DetailMovie>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: " + t.message)
             }
         }
