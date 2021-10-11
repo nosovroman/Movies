@@ -1,6 +1,5 @@
 package com.example.arcticfoxcompose
 
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -38,18 +37,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.compose.rememberImagePainter
 import com.example.arcticfoxcompose.common.Common
+import com.example.arcticfoxcompose.common.formatDate
 import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.dataClasses.Result
 import com.example.arcticfoxcompose.ui.theme.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
 
-    //private val viewModel: MovieListViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -83,23 +80,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//@Composable
-//fun DetailMovieScreen(movieId: Int) {
-//    Text("Detail Movie: $movieId")
-//}
-
 @Composable
 fun MainScreen(navController: NavHostController) {
-    var textState = remember { mutableStateOf(mutableListOf<Result>()) }
-    var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_SOMETHING) }
-    Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
-        Spacer(modifier = Modifier.height(10.dp))
-        SearchFieldElem(state = textState, resultOfLoad = resultOfLoad)
-        Spacer(modifier = Modifier.height(10.dp))
-        MovieListElem(state = textState, navController = navController, resultOfLoad = resultOfLoad)
-    }
+        var textState = remember { mutableStateOf(mutableListOf<Result>()) }
+        var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_SOMETHING) }
+        Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
+            Spacer(modifier = Modifier.height(10.dp))
+            SearchFieldElem(state = textState, resultOfLoad = resultOfLoad)
+            Spacer(modifier = Modifier.height(10.dp))
+            MovieListElem(state = textState, navController = navController, resultOfLoad = resultOfLoad)
+        }
 
-    getMyDiscover(state = textState, resultOfLoad = resultOfLoad)
+        getMyDiscover(state = textState, resultOfLoad = resultOfLoad)
 }
 
 // --- получение фильмов
@@ -292,16 +284,7 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: Muta
 fun MovieCardElem(movie: Result, navController: NavHostController) {
         // установка формата даты
     Log.d("POKEMON", "${movie.title}: ${movie.release_date.toString()}")
-    val date = if (movie.release_date != null && movie.release_date != "") {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val x = LocalDate.parse(movie.release_date)
-            x.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
-        } else {
-            movie.release_date
-        }
-    } else {
-        "-"
-    }
+    val date = movie.release_date.formatDate()
 
 
     Log.d("PATH", "${movie.title}: ${movie.poster_path}")
@@ -387,6 +370,19 @@ fun MovieCardElem(movie: Result, navController: NavHostController) {
     }
 }
 
+//// преобразование даты
+//private fun getFormatDate(dateStr: String): String {
+//    return if (dateStr != null && dateStr != "") {
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                    val x = LocalDate.parse(dateStr)
+//                    x.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+//                } else {
+//                    dateStr
+//                }
+//            } else {
+//                "-"
+//            }
+//}
 // ---------------------------------- КОНЕЦ ---------------------------
 
 //@Preview
