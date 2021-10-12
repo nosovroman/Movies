@@ -82,21 +82,31 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(navController: NavHostController) {
-        var textState = remember { mutableStateOf(mutableListOf<Result>()) }
-        var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_SOMETHING) }
-        Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
-            Spacer(modifier = Modifier.height(10.dp))
-            SearchFieldElem(state = textState, resultOfLoad = resultOfLoad)
-            Spacer(modifier = Modifier.height(10.dp))
-            MovieListElem(state = textState, navController = navController, resultOfLoad = resultOfLoad)
-        }
+    var textState = remember { mutableStateOf(mutableListOf<Result>()) }
+    var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_NOTHING) }
+    var letShowErrorDialog =  remember { mutableStateOf("") }
 
-        getMyDiscover(state = textState, resultOfLoad = resultOfLoad)
+    getMyDiscover(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog)
+
+    ShowErrorDialog(letShowDialog = letShowErrorDialog)
+
+    Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
+        Spacer(modifier = Modifier.height(10.dp))
+        SearchFieldElem(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog)
+        Spacer(modifier = Modifier.height(10.dp))
+        if (resultOfLoad.value == Common.LOAD_STATE_SOMETHING) {
+            MovieListElem(state = textState, navController = navController, resultOfLoad = resultOfLoad)
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colors.onSurface)
+            }
+        }
+    }
 }
 
 // --- получение фильмов
 // перезапись: state
-fun getMyDiscover(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>) {
+fun getMyDiscover(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>) {
     val movies = mutableListOf<Result>()
 
     Common.retrofitService.getDiscover().enqueue(
@@ -117,65 +127,61 @@ fun getMyDiscover(state: MutableState<MutableList<Result>>, resultOfLoad: Mutabl
             }
 
             override fun onFailure(call: Call<Discover>, t: Throwable) {
-                Log.d("ErRoR", "onFailureDiscover: "+ t.message)
+                Log.d("ErRoR", "onFailureDiscover: $t")
+                letShowDialog.value = t.message.toString()
             }
         }
     )
 }
 
 // --- получение фильмов
-// перезапись: state
-fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>>, letShowDialog: MutableState<Boolean>, resultOfLoad: MutableState<Int>) {
-    try {
-        val movies = mutableListOf<Result>()
+fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>) {
+    val movies = mutableListOf<Result>()
 
-        Log.d("MyDiscover", "Hello bro212")
-        Common.retrofitService.getSearchDiscover(query = request).enqueue(
-            object : Callback<Discover> {
-                override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
-//                Log.d("MyDiscover", "Hello bro")
-                    val responseBody = response.body()!!.results
-                    val myStringBuilder = StringBuilder()
-                    for (myData in responseBody) {
-                        myStringBuilder.append("${myData.title}\n")
-                        movies.add(myData)
-                    }
-                    Log.d("MyDiscover", "END: \n $myStringBuilder")
-                    state.value = movies
-
-                    if (movies.isEmpty()) resultOfLoad.value = Common.LOAD_STATE_NOTHING
-                    else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
+    Log.d("MyDiscover", "Hello bro212")
+    Common.retrofitService.getSearchDiscover(query = request).enqueue(
+        object : Callback<Discover> {
+            override fun onResponse(call: Call<Discover>, response: Response<Discover>) {
+                val responseBody = response.body()!!.results
+                val myStringBuilder = StringBuilder()
+                for (myData in responseBody) {
+                    myStringBuilder.append("${myData.title}\n")
+                    movies.add(myData)
                 }
+                Log.d("MyDiscover", "END: \n $myStringBuilder")
+                state.value = movies
 
-                override fun onFailure(call: Call<Discover>, t: Throwable) {
-                    Log.d("ErRoR", "onFailureDiscover: " + t.message)
-                }
+                if (movies.isEmpty()) resultOfLoad.value = Common.LOAD_STATE_NOTHING
+                else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
             }
-        )
-    } catch (e: Exception) {
-        Log.d("POKEMON", e.toString())
-        //letShowDialog.value = true
-    }
+
+            override fun onFailure(call: Call<Discover>, t: Throwable) {
+                Log.d("ErRoR", "onFailureDiscover: $t")
+                letShowDialog.value = t.message.toString()
+            }
+        }
+    )
 }
 
 @Composable
-fun ShowErrorDialog(letShowDialog: MutableState<Boolean>) {
+fun ShowErrorDialog(letShowDialog: MutableState<String>) {
 
-    if (letShowDialog.value) {
+    if (letShowDialog.value != "") {
         AlertDialog(
             onDismissRequest = {
             },
             title = {
-                Text(text = "Alert Dialog")
+                Text(text = "Ошибка!")
             },
             text = {
-                Text("JetPack Compose Alert Dialog!")
+                Text("$letShowDialog")
             },
             confirmButton = {
                 Button(onClick = {
-                    letShowDialog.value = false
+                    letShowDialog.value = ""
+
                 }) {
-                    Text("Ок")
+                    Text("Обновить")
                 }
             }
         )
@@ -212,11 +218,11 @@ fun MovieListElem(state: MutableState<MutableList<Result>>, navController: NavHo
 
 // строка поиска
 @Composable
-fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>) {
+fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>, letShowDialog: MutableState<String>) {
     var searchLineState = remember { mutableStateOf("") }
-    var letShowErrorDialog =  remember { mutableStateOf(false) }
+    //var letShowErrorDialog =  remember { mutableStateOf("") }
 
-    ShowErrorDialog(letShowErrorDialog)
+    //ShowErrorDialog(letShowDialog = letShowErrorDialog, textState = state)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -238,23 +244,13 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: Muta
                 .border(
                     width = 2.dp,
                     color = SearchLineColorEnd,
-                    //brush = Brush.horizontalGradient(listOf(SearchLineColorStart, SearchLineColorEnd)),
                     shape = RoundedCornerShape(10.dp)
                 ),
-//            keyboardActions = KeyboardActions(onDone = {
-//                //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
-//                if (searchLineState.value.trim() != "") {
-//                    getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowErrorDialog)
-//                }
-////                else {
-////                    getMyDiscover(state = state)
-////                }
-//            }),
             value = searchLineState.value,
             onValueChange = {
                 searchLineState.value = it
-                if (searchLineState.value.trim() == "")  { getMyDiscover(state = state, resultOfLoad = resultOfLoad) }
-                else { getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowErrorDialog, resultOfLoad = resultOfLoad) }
+                if (searchLineState.value.trim() == "")  { getMyDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad) }
+                else { getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad) }
             },
             singleLine = true,
             textStyle = TextStyle(color = SearchLineColorEnd, fontSize = 20.sp),
@@ -262,11 +258,8 @@ fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: Muta
             trailingIcon = {
                 IconButton(onClick = {
                     if (searchLineState.value.trim() != "") {
-                        getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+                        getMySearchDiscover(request = searchLineState.value, state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
                     }
-                    //updateListMovies(searchLineState.value) ----------------------- ФИЛЬТРАЦИЯ
-
-                    //getMoviesByRequest(searchLineState.toString());
                 }) {
                     Icon(
                         imageVector = Icons.Default.Search,
