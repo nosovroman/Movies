@@ -1,12 +1,13 @@
 package com.example.arcticfoxcompose.retrofit
 
-import android.provider.MediaStore
+
 import com.example.arcticfoxcompose.common.Common
 import com.example.arcticfoxcompose.dataClasses.Actors.Actors
 import com.example.arcticfoxcompose.dataClasses.DetailMovie.DetailMovie
 import com.example.arcticfoxcompose.dataClasses.Discover
 import com.example.arcticfoxcompose.dataClasses.Gallery
 import com.example.arcticfoxcompose.dataClasses.Review.Review
+import com.example.arcticfoxcompose.dataClasses.Video.Video
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -38,7 +39,7 @@ interface RetrofitService {
 
 
     // /movie/{movie_id}/videos
-    @GET("movie/{movie_id}/credits?api_key=${Common.API_KEY}&language=${Common.LANGUAGE}")
-    fun getVideo(@Path("movie_id") movieId: Int): Call<MediaStore.Video>
+    @GET("movie/{movie_id}/videos?api_key=${Common.API_KEY}&language=${Common.LANGUAGE}")
+    fun getVideo(@Path("movie_id") movieId: Int): Call<Video>
 
 }//, @Query("language") lan: String

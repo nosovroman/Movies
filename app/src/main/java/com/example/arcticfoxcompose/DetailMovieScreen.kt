@@ -36,6 +36,8 @@ import com.example.arcticfoxcompose.dataClasses.DetailMovie.NeedDetailMovie
 import com.example.arcticfoxcompose.dataClasses.Gallery
 import com.example.arcticfoxcompose.dataClasses.Poster
 import com.example.arcticfoxcompose.dataClasses.Review.Review
+import com.example.arcticfoxcompose.dataClasses.Video.ResVideo
+import com.example.arcticfoxcompose.dataClasses.Video.Video
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -47,11 +49,13 @@ fun DetailMovieScreen(movieId: Int) {
     var detailState = remember { mutableStateOf(NeedDetailMovie()) }
     var reviewState = remember { mutableStateOf(mutableMapOf<String, String>()) }
     var actorState = remember { mutableStateOf(mutableListOf<String>()) }
+    var videoState = remember { mutableStateOf(mutableListOf<ResVideo>()) }
 
     getDetailMovie(movieId = movieId, detailState = detailState)
     getGallery(movieId = movieId, posterState = posterState)
     getReview(movieId = movieId, reviewState = reviewState)
     getActors(movieId = movieId, actorState = actorState)
+    getVideo(movieId = movieId, videoState = videoState)
 
     val scrollState = rememberScrollState()
     Column (
@@ -61,11 +65,14 @@ fun DetailMovieScreen(movieId: Int) {
         GalleryElem(posterState)
         Column(modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
             MovieInfo(detailState)
+            Spacer(modifier = Modifier.height(10.dp))
             DescriptionReview(detailState = detailState, reviewState = reviewState)
+            Spacer(modifier = Modifier.height(10.dp))
             ActorsInfo(actorState)
-            YoutubeButton(detailState)
+            Spacer(modifier = Modifier.height(10.dp))
+            YoutubeButton(videoState)
+            Spacer(modifier = Modifier.height(10.dp))
         }
-
     }
 }
 
@@ -173,9 +180,6 @@ fun MovieInfo(detailState: MutableState<NeedDetailMovie>) {
                 fontSize = 16.sp
             )
         }
-
-        Spacer(modifier = Modifier.height(spaceInfo))
-        Spacer(modifier = Modifier.height(spaceInfo))
     }
 }
 
@@ -242,7 +246,6 @@ fun DescriptionReview(detailState: MutableState<NeedDetailMovie>, reviewState: M
         color = infoColor,
         maxLines = Int.MAX_VALUE
     )
-    Spacer(modifier = Modifier.height(10.dp))
 }
 
 @Composable
@@ -289,25 +292,25 @@ fun ActorsInfo(actorState: MutableState<MutableList<String>>) {
                 color = infoColor,
                 maxLines = if (expandedMode.value) Int.MAX_VALUE else 3
             )
-            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
 
 
 @Composable
-fun YoutubeButton(detailState: MutableState<NeedDetailMovie>) {
+fun YoutubeButton(videoState: MutableState<MutableList<ResVideo>>) {
     //val detailMovie = detailState.
     // кнопка видео Ютуб
-    //if (detailMovie.video) {
+    if (videoState.value.isNotEmpty()) {
+        val keyVideo = videoState.value[0].key
         Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             val context = LocalContext.current
-            val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/")) }
+            val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse(Common.BASE_URL_YOUTUBE + keyVideo)) }
             Button(onClick = { context.startActivity(intent) }) {
                 Text(text = "Смотреть видео")
             }
         }
-    //}
+    }
 }
 
 fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
@@ -421,6 +424,49 @@ fun getActors(movieId: Int, actorState: MutableState<MutableList<String>>) {
 
             override fun onFailure(call: Call<Actors>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: " + t.message)
+            }
+        }
+    )
+}
+
+//fun getVideo(movieId: Int, videoState: MutableState<String>) {
+//    Common.retrofitService.getVideo(movieId).enqueue(
+//        object : Callback<Video> {
+//            override fun onResponse(call: Call<Video>, response: Response<Video>) {
+//                val responseBody = response.body()!!.results
+//                if (responseBody.isNotEmpty()) {
+//                    videoState.value = responseBody[0].key
+//                    Log.d("MyVideo1", "END: \n ${videoState.value}")
+//                }
+//
+//                Log.d("MyVideo", "END: \n $responseBody")
+//            }
+//
+//            override fun onFailure(call: Call<Video>, t: Throwable) {
+//                Log.d("ErRoR", "onFailureDiscover: " + t.message)
+//            }
+//        }
+//    )
+//}
+
+fun getVideo(movieId: Int, videoState: MutableState<MutableList<ResVideo>>) {
+    val videos = mutableListOf<ResVideo>()
+
+    Common.retrofitService.getVideo(movieId).enqueue(
+        object : Callback<Video> {
+            override fun onResponse(call: Call<Video>, response: Response<Video>) {
+                val responseBody = response.body()!!.results
+                val myStringBuilder = StringBuilder()
+                for (myData in responseBody) {
+                    myStringBuilder.append("${myData}\n")
+                    videos.add(myData)
+                }
+                Log.d("MyVideo", "END: \n $myStringBuilder")
+                videoState.value = videos
+            }
+
+            override fun onFailure(call: Call<Video>, t: Throwable) {
+                Log.d("ErRoR", "onFailureDiscover: "+ t.message)
             }
         }
     )
