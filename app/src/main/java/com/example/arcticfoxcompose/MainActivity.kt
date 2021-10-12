@@ -152,8 +152,8 @@ fun getMySearchDiscover(state: MutableState<MutableList<Result>>, letShowDialog:
                 Log.d("MyDiscover", "END: \n $myStringBuilder")
                 state.value = movies
 
-                if (movies.isEmpty()) resultOfLoad.value = Common.LOAD_STATE_NOTHING
-                else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
+//                if (movies. = ) resultOfLoad.value = Common.LOAD_STATE_NOTHING
+//                else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
             }
 
             override fun onFailure(call: Call<Discover>, t: Throwable) {
