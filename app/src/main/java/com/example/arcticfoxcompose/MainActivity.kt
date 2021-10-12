@@ -84,15 +84,16 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(navController: NavHostController) {
     var textState = remember { mutableStateOf(mutableListOf<Result>()) }
     var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_NOTHING) }
+    var searchLineState = remember { mutableStateOf("") }
     var letShowErrorDialog =  remember { mutableStateOf("") }
 
     getMyDiscover(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog)
 
-    ShowErrorDialog(letShowDialog = letShowErrorDialog)
+    ShowErrorDialog(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog, request = searchLineState)
 
     Column (modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
         Spacer(modifier = Modifier.height(10.dp))
-        SearchFieldElem(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog)
+        SearchFieldElem(state = textState, resultOfLoad = resultOfLoad, letShowDialog = letShowErrorDialog, searchLineState = searchLineState)
         Spacer(modifier = Modifier.height(10.dp))
         if (resultOfLoad.value == Common.LOAD_STATE_SOMETHING) {
             MovieListElem(state = textState, navController = navController, resultOfLoad = resultOfLoad)
@@ -135,7 +136,7 @@ fun getMyDiscover(state: MutableState<MutableList<Result>>, letShowDialog: Mutab
 }
 
 // --- получение фильмов
-fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>) {
+fun getMySearchDiscover(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: String) {
     val movies = mutableListOf<Result>()
 
     Log.d("MyDiscover", "Hello bro212")
@@ -163,8 +164,17 @@ fun getMySearchDiscover(request: String, state: MutableState<MutableList<Result>
     )
 }
 
+// обновление экрана
+fun updateScreen(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: String) {
+    if (request == "") {
+        getMyDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
+    } else {
+        getMySearchDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad, request = request)
+    }
+}
+
 @Composable
-fun ShowErrorDialog(letShowDialog: MutableState<String>) {
+fun ShowErrorDialog(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: MutableState<String>) {
 
     if (letShowDialog.value != "") {
         AlertDialog(
@@ -179,7 +189,7 @@ fun ShowErrorDialog(letShowDialog: MutableState<String>) {
             confirmButton = {
                 Button(onClick = {
                     letShowDialog.value = ""
-
+                    updateScreen(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad, request = request.value)
                 }) {
                     Text("Обновить")
                 }
@@ -218,8 +228,8 @@ fun MovieListElem(state: MutableState<MutableList<Result>>, navController: NavHo
 
 // строка поиска
 @Composable
-fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>, letShowDialog: MutableState<String>) {
-    var searchLineState = remember { mutableStateOf("") }
+fun SearchFieldElem(state: MutableState<MutableList<Result>>, resultOfLoad: MutableState<Int>, letShowDialog: MutableState<String>, searchLineState: MutableState<String>) {
+    //var searchLineState = remember { mutableStateOf("") }
     //var letShowErrorDialog =  remember { mutableStateOf("") }
 
     //ShowErrorDialog(letShowDialog = letShowErrorDialog, textState = state)
