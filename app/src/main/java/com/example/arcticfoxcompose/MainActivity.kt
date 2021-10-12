@@ -174,7 +174,7 @@ fun updateScreen(state: MutableState<MutableList<Result>>, letShowDialog: Mutabl
 }
 
 @Composable
-fun ShowErrorDialog(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: MutableState<String>) {
+private fun ShowErrorDialog(state: MutableState<MutableList<Result>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>, request: MutableState<String>) {
 
     if (letShowDialog.value != "") {
         AlertDialog(

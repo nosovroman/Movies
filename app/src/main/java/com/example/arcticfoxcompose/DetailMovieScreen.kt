@@ -11,10 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -51,33 +48,85 @@ fun DetailMovieScreen(movieId: Int) {
     var actorState = remember { mutableStateOf(mutableListOf<String>()) }
     var videoState = remember { mutableStateOf(mutableListOf<ResVideo>()) }
 
-    getDetailMovie(movieId = movieId, detailState = detailState)
-    getGallery(movieId = movieId, posterState = posterState)
-    getReview(movieId = movieId, reviewState = reviewState)
-    getActors(movieId = movieId, actorState = actorState)
-    getVideo(movieId = movieId, videoState = videoState)
+    var resultOfLoad = remember { mutableStateOf(Common.LOAD_STATE_NOTHING) }
+    var letShowErrorDialog =  remember { mutableStateOf("") }
+
+    getGallery(movieId = movieId, posterState = posterState, letShowErrorDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+    getDetailMovie(movieId = movieId, detailState = detailState, letShowErrorDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+    getReview(movieId = movieId, reviewState = reviewState, letShowErrorDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+    getActors(movieId = movieId, actorState = actorState, letShowErrorDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+    getVideo(movieId = movieId, videoState = videoState, letShowErrorDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+
+    ShowErrorDialog(movieId = movieId,
+        posterState = posterState,
+        detailState = detailState,
+        reviewState = reviewState,
+        actorState = actorState,
+        videoState = videoState, letShowDialog = letShowErrorDialog, resultOfLoad = resultOfLoad)
+
 
     val scrollState = rememberScrollState()
     Column (
         modifier = Modifier
             .verticalScroll(scrollState)
     ) {
-        GalleryElem(posterState)
+        GalleryElem(posterState, resultOfLoad = resultOfLoad, letShowErrorDialog = letShowErrorDialog)
         Column(modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
-            MovieInfo(detailState)
-            Spacer(modifier = Modifier.height(10.dp))
-            DescriptionReview(detailState = detailState, reviewState = reviewState)
-            Spacer(modifier = Modifier.height(10.dp))
-            ActorsInfo(actorState)
-            Spacer(modifier = Modifier.height(10.dp))
-            YoutubeButton(videoState)
-            Spacer(modifier = Modifier.height(10.dp))
+            if ( resultOfLoad.value == Common.LOAD_STATE_SOMETHING ){
+                MovieInfo(detailState, resultOfLoad = resultOfLoad, letShowErrorDialog = letShowErrorDialog)
+                Spacer(modifier = Modifier.height(10.dp))
+                DescriptionReview(detailState = detailState, reviewState = reviewState, resultOfLoad = resultOfLoad, letShowErrorDialog = letShowErrorDialog)
+                Spacer(modifier = Modifier.height(10.dp))
+                ActorsInfo(actorState, resultOfLoad = resultOfLoad, letShowErrorDialog = letShowErrorDialog)
+                Spacer(modifier = Modifier.height(10.dp))
+                YoutubeButton(videoState, resultOfLoad = resultOfLoad, letShowErrorDialog = letShowErrorDialog)
+                Spacer(modifier = Modifier.height(10.dp))
+            } else {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colors.onSurface)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun GalleryElem(posterState: MutableState<MutableList<Poster>>) {
+private fun ShowErrorDialog(movieId: Int,
+                            posterState: MutableState<MutableList<Poster>>,
+                            detailState: MutableState<NeedDetailMovie>,
+                            reviewState: MutableState<MutableMap<String, String>>,
+                            actorState: MutableState<MutableList<String>>,
+                            videoState: MutableState<MutableList<ResVideo>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>) {
+
+    if (letShowDialog.value != "") {
+        AlertDialog(
+            onDismissRequest = {
+            },
+            title = {
+                Text(text = "Ошибка!")
+            },
+            text = {
+                Text("$letShowDialog")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    letShowDialog.value = ""
+                    updateDetailScreen(movieId = movieId,
+                        posterState = posterState,
+                        detailState = detailState,
+                        reviewState = reviewState,
+                        actorState = actorState,
+                        videoState = videoState, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
+                }) {
+                    Text("Обновить")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun GalleryElem(posterState: MutableState<MutableList<Poster>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     val posters = posterState.value
     Log.d("privet", posters.toString())
         if (posters.isNotEmpty()) {
@@ -116,7 +165,7 @@ fun GalleryElem(posterState: MutableState<MutableList<Poster>>) {
 }
 
 @Composable
-fun MovieInfo(detailState: MutableState<NeedDetailMovie>) {
+fun MovieInfo(detailState: MutableState<NeedDetailMovie>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     val detailMovie = detailState.value
 
     val genreString = detailMovie.genres.toString().drop(1).dropLast(1)
@@ -184,7 +233,7 @@ fun MovieInfo(detailState: MutableState<NeedDetailMovie>) {
 }
 
 @Composable
-fun DescriptionReview(detailState: MutableState<NeedDetailMovie>, reviewState: MutableState<MutableMap<String, String>>) {
+fun DescriptionReview(detailState: MutableState<NeedDetailMovie>, reviewState: MutableState<MutableMap<String, String>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     val detailMovie = detailState.value
     val descriptionMode = remember { mutableStateOf(true) }
     val typeInfoColor = MaterialTheme.colors.primary
@@ -234,7 +283,7 @@ fun DescriptionReview(detailState: MutableState<NeedDetailMovie>, reviewState: M
         text = if (descriptionMode.value)
         {detailMovie.overview}
         else {
-            if (reviewState.value["author"] != "") {
+            if (reviewState.value["author"] != "" && reviewState.value["author"] != null) {
                 "[${reviewState.value["author"]}]: ${reviewState.value["content"]}"
             } else { "Рецензий пока не было" }
 
@@ -249,7 +298,7 @@ fun DescriptionReview(detailState: MutableState<NeedDetailMovie>, reviewState: M
 }
 
 @Composable
-fun ActorsInfo(actorState: MutableState<MutableList<String>>) {
+fun ActorsInfo(actorState: MutableState<MutableList<String>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     // поле с актерами
     val typeInfoColor = MaterialTheme.colors.primary
     val infoColor = MaterialTheme.colors.onSecondary
@@ -296,9 +345,8 @@ fun ActorsInfo(actorState: MutableState<MutableList<String>>) {
     }
 }
 
-
 @Composable
-fun YoutubeButton(videoState: MutableState<MutableList<ResVideo>>) {
+fun YoutubeButton(videoState: MutableState<MutableList<ResVideo>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     //val detailMovie = detailState.
     // кнопка видео Ютуб
     if (videoState.value.isNotEmpty()) {
@@ -313,7 +361,7 @@ fun YoutubeButton(videoState: MutableState<MutableList<ResVideo>>) {
     }
 }
 
-fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
+fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     val movieInfo = mutableListOf<Poster>()
 
     Common.retrofitService.getGallery(movieId).enqueue(
@@ -331,19 +379,20 @@ fun getGallery(movieId: Int, posterState: MutableState<MutableList<Poster>>) {
 
             override fun onFailure(call: Call<Gallery>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: " + t.message)
+                letShowErrorDialog.value = t.message.toString()
             }
         }
     )
 }
 
-fun getDetailMovie(movieId: Int, detailState: MutableState<NeedDetailMovie>) {
+fun getDetailMovie(movieId: Int, detailState: MutableState<NeedDetailMovie>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     Common.retrofitService.getDetailMovie(movieId).enqueue(
         object : Callback<DetailMovie> {
             override fun onResponse(call: Call<DetailMovie>, response: Response<DetailMovie>) {
                 //val responseBody = response.body()!!.posters
                 val responseBody = response.body()
                 val genres = responseBody?.genres?.map { it.name } ?: listOf()
-                val title = responseBody?.title ?: ""
+                val title = responseBody?.title ?: "null"
                 val release_date = responseBody?.release_date ?: ""
                 val vote_average = responseBody?.vote_average ?: 0.0
                 val video = responseBody?.video ?: false
@@ -361,16 +410,20 @@ fun getDetailMovie(movieId: Int, detailState: MutableState<NeedDetailMovie>) {
                 //Log.d("MyDetail", "END: \n $needDetailMovie")
                 detailState.value = needDetailMovie
                 Log.d("MyDetail", "END: \n ${detailState.value}")
+
+                if (needDetailMovie.title == "null") resultOfLoad.value = Common.LOAD_STATE_NOTHING
+                else resultOfLoad.value = Common.LOAD_STATE_SOMETHING
             }
 
             override fun onFailure(call: Call<DetailMovie>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: " + t.message)
+                letShowErrorDialog.value = t.message.toString()
             }
         }
     )
 }
 
-fun getReview(movieId: Int, reviewState: MutableState<MutableMap<String, String>>) {
+fun getReview(movieId: Int, reviewState: MutableState<MutableMap<String, String>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     var reviewInfo = mutableMapOf<String, String>()
 
     Common.retrofitService.getReview(movieId).enqueue(
@@ -397,12 +450,13 @@ fun getReview(movieId: Int, reviewState: MutableState<MutableMap<String, String>
 
             override fun onFailure(call: Call<Review>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: " + t.message)
+                letShowErrorDialog.value = t.message.toString()
             }
         }
     )
 }
 
-fun getActors(movieId: Int, actorState: MutableState<MutableList<String>>) {
+fun getActors(movieId: Int, actorState: MutableState<MutableList<String>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     val listActors = mutableListOf<String>()
 
     Common.retrofitService.getActors(movieId).enqueue(
@@ -424,32 +478,13 @@ fun getActors(movieId: Int, actorState: MutableState<MutableList<String>>) {
 
             override fun onFailure(call: Call<Actors>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: " + t.message)
+                letShowErrorDialog.value = t.message.toString()
             }
         }
     )
 }
 
-//fun getVideo(movieId: Int, videoState: MutableState<String>) {
-//    Common.retrofitService.getVideo(movieId).enqueue(
-//        object : Callback<Video> {
-//            override fun onResponse(call: Call<Video>, response: Response<Video>) {
-//                val responseBody = response.body()!!.results
-//                if (responseBody.isNotEmpty()) {
-//                    videoState.value = responseBody[0].key
-//                    Log.d("MyVideo1", "END: \n ${videoState.value}")
-//                }
-//
-//                Log.d("MyVideo", "END: \n $responseBody")
-//            }
-//
-//            override fun onFailure(call: Call<Video>, t: Throwable) {
-//                Log.d("ErRoR", "onFailureDiscover: " + t.message)
-//            }
-//        }
-//    )
-//}
-
-fun getVideo(movieId: Int, videoState: MutableState<MutableList<ResVideo>>) {
+fun getVideo(movieId: Int, videoState: MutableState<MutableList<ResVideo>>, resultOfLoad: MutableState<Int>, letShowErrorDialog: MutableState<String>) {
     val videos = mutableListOf<ResVideo>()
 
     Common.retrofitService.getVideo(movieId).enqueue(
@@ -467,7 +502,29 @@ fun getVideo(movieId: Int, videoState: MutableState<MutableList<ResVideo>>) {
 
             override fun onFailure(call: Call<Video>, t: Throwable) {
                 Log.d("ErRoR", "onFailureDiscover: "+ t.message)
+                letShowErrorDialog.value = t.message.toString()
             }
         }
     )
+}
+
+// обновление экрана
+fun updateDetailScreen(movieId: Int,
+                       posterState: MutableState<MutableList<Poster>>,
+                       detailState: MutableState<NeedDetailMovie>,
+                       reviewState: MutableState<MutableMap<String, String>>,
+                       actorState: MutableState<MutableList<String>>,
+                       videoState: MutableState<MutableList<ResVideo>>, letShowDialog: MutableState<String>, resultOfLoad: MutableState<Int>) {
+
+    getGallery(movieId = movieId, posterState = posterState, letShowErrorDialog = letShowDialog, resultOfLoad = resultOfLoad)
+    getDetailMovie(movieId = movieId, detailState = detailState, letShowErrorDialog = letShowDialog, resultOfLoad = resultOfLoad)
+    getReview(movieId = movieId, reviewState = reviewState, letShowErrorDialog = letShowDialog, resultOfLoad = resultOfLoad)
+    getActors(movieId = movieId, actorState = actorState, letShowErrorDialog = letShowDialog, resultOfLoad = resultOfLoad)
+    getVideo(movieId = movieId, videoState = videoState, letShowErrorDialog = letShowDialog, resultOfLoad = resultOfLoad)
+
+//    if (request == "") {
+//        getMyDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad)
+//    } else {
+//        getMySearchDiscover(state = state, letShowDialog = letShowDialog, resultOfLoad = resultOfLoad, request = request)
+//    }
 }
